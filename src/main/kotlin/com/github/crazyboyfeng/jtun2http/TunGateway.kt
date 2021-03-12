@@ -26,7 +26,7 @@ import java.util.logging.Logger
 class TunGateway @Throws(TunInterfaceInvalidException::class) constructor(
     tunInterface: FileDescriptor,
     remoteProxy: SocketAddress
-) : Runnable {
+) : Thread() {
     class TunInterfaceInvalidException : FileNotFoundException()
 
     private val log = Logger.getGlobal()
@@ -54,8 +54,9 @@ class TunGateway @Throws(TunInterfaceInvalidException::class) constructor(
         mainJob = launch { listen() }
     }
 
-    fun stop() {
+    override fun interrupt() {
         mainJob?.cancel()
+        super.interrupt()
     }
 
     private suspend fun listen() = withContext(Dispatchers.Unconfined) {//当前线程运行协程
