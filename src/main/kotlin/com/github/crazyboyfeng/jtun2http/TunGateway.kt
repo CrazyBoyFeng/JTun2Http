@@ -75,7 +75,7 @@ class TunGateway @Throws(TunInterfaceInvalidException::class) constructor(
         //todo 读取并处理
     }
 
-    private fun close() = runBlocking {//因在主线程所以要重新开启阻塞协程作用域
+    private suspend fun close() = withContext(NonCancellable) {//排除出主协程的取消操作
         launch(Dispatchers.IO) { fromLan.close() }
         launch(Dispatchers.IO) { toLan.close() }
         //TODO 关闭proxy连接
