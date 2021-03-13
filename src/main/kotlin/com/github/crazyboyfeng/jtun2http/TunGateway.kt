@@ -51,11 +51,13 @@ class TunGateway @Throws(TunInterfaceInvalidException::class) constructor(
         //todo 连接失败抛出异常
         mainJob = launch {
             //当前线程运行协程
-            try {//要是idea智能点也好，提示一下可能有的异常，但是什么提示都没有。捕捉异常全靠猜和坑。
+            try {
                 while (isActive) {//没有被打断
                     receive()
                     delay(100)
                 }
+            } catch (e: Exception) {//要是idea智能点也好，提示一下可能有的异常，但是什么提示都没有。捕捉异常全靠猜和坑。
+                throw e//抛给线程
             } finally {
                 close()
             }
