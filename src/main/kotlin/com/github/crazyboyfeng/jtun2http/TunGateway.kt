@@ -56,7 +56,6 @@ class TunGateway @Throws(TunInterfaceInvalidException::class) constructor(
 
     override fun interrupt() {
         mainJob?.cancel()
-        super.interrupt()
     }
 
     private suspend fun listen() = withContext(Dispatchers.Unconfined) {//当前线程运行协程
