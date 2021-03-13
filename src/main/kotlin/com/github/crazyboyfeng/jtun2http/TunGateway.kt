@@ -27,14 +27,15 @@ class TunGateway @Throws(TunInterfaceInvalidException::class) constructor(
     tunInterface: FileDescriptor,
     remoteProxy: SocketAddress
 ) : Thread() {
-    class TunInterfaceInvalidException : FileNotFoundException()
+    class TunInterfaceInvalidException(msg: String) : FileNotFoundException(msg)
 
     private val log = Logger.getGlobal()
 
     init {
         if (!tunInterface.valid()) {
-            log.severe("Tunnel interface is invalid!")
-            throw TunInterfaceInvalidException()
+            val msg = "Tunnel interface is invalid!"
+            log.severe(msg)
+            throw TunInterfaceInvalidException(msg)
         }
     }
 
