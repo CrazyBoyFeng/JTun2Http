@@ -48,7 +48,7 @@ class TunGateway @Throws(TunInterfaceInvalidException::class) constructor(
         InterruptedException::class,
         IOException::class,
         SecurityException::class,//kotlin不显式声明异常这点并不好，只有实际使用时遇到了才发现还会有权限不足异常。
-    )
+    )//要是idea智能点也好，提示一下可能有的异常，但是什么提示都没有。捕捉异常全靠猜和坑。
     override fun run() = runBlocking {
         //使用线程内调用阻塞协程是保活需要。非阻塞协程不保活。
         try {
