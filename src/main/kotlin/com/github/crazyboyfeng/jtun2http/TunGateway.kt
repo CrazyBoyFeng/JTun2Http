@@ -44,23 +44,31 @@ class TunGateway @Throws(TunInterfaceInvalidException::class) constructor(
     private val toLan = FileOutputStream(tunInterface)
     private var mainJob: Job? = null
 
-    @Throws(SecurityException::class)//kotlin不显式声明异常这点并不好，只有实际使用时遇到了才发现还有权限不足异常。
+    @Throws(
+        InterruptedException::class,
+        IOException::class,
+        SecurityException::class,//kotlin不显式声明异常这点并不好，只有实际使用时遇到了才发现还会有权限不足异常。
+    )
     override fun run() = runBlocking {
         //使用线程内调用阻塞协程是保活需要。非阻塞协程不保活。
-        //todo 测试http代理连接
-        //todo 连接失败抛出异常
-        mainJob = launch {
-            //当前线程运行协程
-            try {
+        try {
+            //todo 测试http代理连接
+            //todo 连接失败抛出异常
+            mainJob = launch {
+                //当前线程运行协程
                 while (isActive) {//没有被打断
                     receive()
                     delay(100)
                 }
-            } catch (e: Exception) {//要是idea智能点也好，提示一下可能有的异常，但是什么提示都没有。捕捉异常全靠猜和坑。
-                throw e//抛给线程
-            } finally {
-                close()
             }
+            mainJob!!.join()
+            val msg = "Tunnel interface is closed!"
+            log.info(msg)
+            throw InterruptedException(msg)
+        } catch (e: IOException) {//要是idea智能点也好，提示一下可能有的异常，但是什么提示都没有。捕捉异常全靠猜和坑。
+            throw e//抛给线程
+        } finally {
+            close()
         }
     }
 
