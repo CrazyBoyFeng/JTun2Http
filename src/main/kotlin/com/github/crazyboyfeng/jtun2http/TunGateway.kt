@@ -65,8 +65,6 @@ class TunGateway @Throws(TunInterfaceInvalidException::class) constructor(
             val msg = "Tunnel interface is closed!"
             log.info(msg)
             throw InterruptedException(msg)
-        } catch (e: IOException) {//要是idea智能点也好，提示一下可能有的异常，但是什么提示都没有。捕捉异常全靠猜和坑。
-            throw e//抛给线程
         } finally {
             close()
         }
