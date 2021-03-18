@@ -16,10 +16,8 @@
 package com.github.crazyboyfeng.jtun2http
 
 import kotlinx.coroutines.*
-import java.io.FileDescriptor
-import java.io.FileInputStream
-import java.io.FileNotFoundException
-import java.io.FileOutputStream
+import kotlinx.coroutines.Dispatchers.IO
+import java.io.*
 import java.net.SocketAddress
 import java.util.logging.Logger
 
