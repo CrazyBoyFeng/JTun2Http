@@ -22,8 +22,8 @@ import java.net.SocketAddress
 import java.util.logging.Logger
 
 class TunGateway @Throws(TunInterfaceInvalidException::class) constructor(
-    tunInterface: FileDescriptor,
-    remoteProxy: SocketAddress
+    private val tunInterface: FileDescriptor,
+    private val remoteProxy: SocketAddress,
 ) : Thread() {
     class TunInterfaceInvalidException(msg: String) : FileNotFoundException(msg)
 
@@ -37,9 +37,6 @@ class TunGateway @Throws(TunInterfaceInvalidException::class) constructor(
         }
     }
 
-    private val httpProxyClient = HttpProxyClient(remoteProxy)
-    private val fromLan = FileInputStream(tunInterface)
-    private val toLan = FileOutputStream(tunInterface)
     private var mainJob: Job? = null
 
     @Throws(
@@ -49,9 +46,16 @@ class TunGateway @Throws(TunInterfaceInvalidException::class) constructor(
     )//要是idea智能点也好，提示一下可能有的异常，但是什么提示都没有。捕捉异常全靠猜和坑。
     override fun run() = runBlocking {
         //使用线程内调用阻塞协程是保活需要。非阻塞协程不保活。
+        val httpProxyClient = HttpProxyClient(remoteProxy)
+        //todo 测试http代理连接
+        //todo 连接失败抛出异常
+        val fromLan = async(IO) {
+            FileInputStream(tunInterface)
+        }
+        val toLan = async(IO) {
+            FileOutputStream(tunInterface)
+        }
         try {
-            //todo 测试http代理连接
-            //todo 连接失败抛出异常
             mainJob = launch {
                 //当前线程运行协程
                 while (isActive) {//没有被打断
@@ -63,8 +67,8 @@ class TunGateway @Throws(TunInterfaceInvalidException::class) constructor(
             val msg = "Tunnel interface is closed!"
             log.info(msg)
             throw InterruptedException(msg)
-        } finally {
-            close()
+        } finally {//我尝试了use()发现很丑陋，需要在外面套上try{}，没有java简洁。不过它们都不能并发操作。
+            close(httpProxyClient, fromLan.await(), toLan.await())
         }
     }
 
