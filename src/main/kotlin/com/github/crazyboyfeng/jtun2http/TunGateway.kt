@@ -76,10 +76,11 @@ class TunGateway @Throws(TunInterfaceInvalidException::class) constructor(
         //todo 读取并处理
     }
 
-    private suspend fun close() = withContext(NonCancellable) {
-        //排除出主协程的取消操作
-        launch(Dispatchers.IO) { fromLan.close() }
-        launch(Dispatchers.IO) { toLan.close() }
-        //TODO 关闭proxy连接
+    private suspend fun close(vararg resources: Closeable) = withContext(NonCancellable) {
+        resources.forEach {
+            launch(IO) {
+                it.close()
+            }
+        }
     }
 }
