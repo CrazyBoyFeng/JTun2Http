@@ -15,6 +15,7 @@
  */
 package com.github.crazyboyfeng.jtun2http
 
+import com.demonwav.kotlinutil.using
 import kotlinx.coroutines.*
 import kotlinx.coroutines.Dispatchers.IO
 import java.io.*
@@ -44,31 +45,31 @@ class TunGateway @Throws(TunInterfaceInvalidException::class) constructor(
         IOException::class,
         SecurityException::class,//kotlin不显式声明异常这点并不好，只有实际使用时遇到了才发现还会有权限不足异常。
     )//要是idea智能点也好，提示一下可能有的异常，但是什么提示都没有。捕捉异常全靠猜和坑。
-    override fun run() = runBlocking {
-        //使用线程内调用阻塞协程是保活需要。非阻塞协程不保活。
-        val httpProxyClient = HttpProxyClient(remoteProxy)
-        //todo 测试http代理连接
-        //todo 连接失败抛出异常
-        val fromLan = async(IO) {
-            FileInputStream(tunInterface)
-        }
-        val toLan = async(IO) {
-            FileOutputStream(tunInterface)
-        }
-        try {
-            mainJob = launch {
-                //当前线程运行协程
-                while (isActive) {//没有被打断
-                    receive()
-                    delay(100)
+    override fun run() {
+        using {
+            //使用线程内调用阻塞协程是保活需要。非阻塞协程不保活。
+            runBlocking {
+                val httpProxyClient = HttpProxyClient(remoteProxy).autoClose()
+                //todo 测试http代理连接
+                //todo 连接失败抛出异常
+                val fromLan = async(IO) {
+                    FileInputStream(tunInterface)
                 }
+                val toLan = async(IO) {
+                    FileOutputStream(tunInterface)
+                }
+                mainJob = launch {
+                    //当前线程运行协程
+                    while (isActive) {//没有被打断
+                        receive(fromLan.await().autoClose())
+                        delay(100)
+                    }
+                }
+                mainJob!!.join()
             }
-            mainJob!!.join()
             val msg = "Tunnel interface is closed!"
             log.info(msg)
             throw InterruptedException(msg)
-        } finally {//我尝试了use()发现很丑陋，需要在外面套上try{}，没有java简洁。不过它们都不能并发操作。
-            close(httpProxyClient, fromLan.await(), toLan.await())
         }
     }
 
@@ -76,7 +77,7 @@ class TunGateway @Throws(TunInterfaceInvalidException::class) constructor(
         mainJob?.cancel()
     }
 
-    private suspend fun receive() = withContext(Dispatchers.IO) {
+    private suspend fun receive(fromLan: FileInputStream) = withContext(IO) {
         //todo 读取并处理
     }
 
